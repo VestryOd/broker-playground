@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { envValidationSchema } from './config/env.validation';
+import { DatabaseModule } from "./database/database.module";
 
 @Module({
   imports: [
@@ -10,9 +11,10 @@ import { envValidationSchema } from './config/env.validation';
       isGlobal: true,
       validationSchema: envValidationSchema,
       validationOptions: {
-        abortEarly: true,
+        abortEarly: false,
       },
     }),
+    DatabaseModule
   ],
   controllers: [AppController],
   providers: [AppService],
