@@ -3,7 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { envValidationSchema } from './config/env.validation';
-import { DatabaseModule } from "./database/database.module";
+import { DatabaseModule } from './database/database.module';
+import { HealthModule } from './health/health.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { DatabaseModule } from "./database/database.module";
         abortEarly: false,
       },
     }),
-    DatabaseModule
+    DatabaseModule,
+    RedisModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
