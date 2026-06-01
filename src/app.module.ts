@@ -4,8 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
+import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
+import { SeatsModule } from "./seats/seats.module";
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { RedisModule } from './redis/redis.module';
     DatabaseModule,
     RedisModule,
     HealthModule,
+    EventsModule,
+    SeatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
