@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { EventsModule } from './events/events.module';
+import { ReservationsModule } from './reservations/reservations.module';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
 import { SeatsModule } from "./seats/seats.module";
@@ -23,6 +24,7 @@ import { SeatsModule } from "./seats/seats.module";
     HealthModule,
     EventsModule,
     SeatsModule,
+    ReservationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
