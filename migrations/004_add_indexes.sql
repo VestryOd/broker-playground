@@ -1,0 +1,1 @@
+CREATE INDEX idx_seats_event_status ON seats (event_id, status);
