@@ -49,4 +49,47 @@ export class ReservationsRepository {
     );
     return rows[0] ?? null;
   }
+
+  async releaseExpired(): Promise<number> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const { rows: expired } = await client.query<{ id: number; seat_id: number }>(
+        `SELECT id, seat_id FROM reservations
+         WHERE status = 'pending' AND expires_at < NOW()
+         FOR UPDATE SKIP LOCKED
+         LIMIT 100`,
+      );
+
+      if (expired.length === 0) {
+        await client.query('COMMIT');
+        return 0;
+      }
+
+      const reservationIds = expired.map((r) => r.id);
+      const seatIds = expired.map((r) => r.seat_id);
+
+      await client.query(
+        `UPDATE reservations SET status = 'cancelled'
+         WHERE id = ANY($1)`,
+        [reservationIds],
+      );
+
+      await client.query(
+        `UPDATE seats SET status = 'available'
+         WHERE id = ANY($1)`,
+        [seatIds],
+      );
+
+      await client.query('COMMIT');
+      return expired.length;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
