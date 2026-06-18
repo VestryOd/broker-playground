@@ -7,13 +7,13 @@ import { Reservation } from '../common/types/reservation.types';
 export class ReservationsRepository {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
 
-  async create(userId: number, seatId: number): Promise<Reservation> {
+  async create(userId: number, seatId: number): Promise<{ reservation: Reservation; eventId: number }> {
     const client = await this.pool.connect();
 
     try {
       await client.query('BEGIN');
-      const { rows: seatRow } = await client.query(
-        `SELECT id, status FROM seats WHERE id = $1 FOR UPDATE NOWAIT`, [seatId]
+      const { rows: seatRow } = await client.query<{ id: number; status: string; event_id: number }>(
+        `SELECT id, status, event_id FROM seats WHERE id = $1 FOR UPDATE NOWAIT`, [seatId]
       );
 
       if (!seatRow[0]) throw new NotFoundException(`Seat ${seatId} not found`);
@@ -29,7 +29,7 @@ export class ReservationsRepository {
       );
       await client.query('COMMIT');
 
-      return reservationRows[0];
+      return { reservation: reservationRows[0], eventId: seatRow[0].event_id };
     } catch (err) {
       try {
         await client.query('ROLLBACK');
