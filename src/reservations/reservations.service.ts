@@ -1,21 +1,43 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, ConflictException, Logger } from '@nestjs/common';
 import { ReservationsRepository } from './reservations.repository';
 import { CreateReservationDto, Reservation } from '../common/types/reservation.types';
-import {REDIS_CLIENT} from "../redis/redis.constants";
+import { REDIS_CLIENT, REDIS_KEYS, REDIS_TTL } from "../redis/redis.constants";
 import Redis from "ioredis";
+import { RedisLockService } from "../redis/redis.lock.service";
 
 @Injectable()
 export class ReservationsService {
+  private readonly logger = new Logger(ReservationsService.name);
+
   constructor(
     private readonly reservationsRepository: ReservationsRepository,
+    private readonly redisLockService: RedisLockService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   async create(dto: CreateReservationDto): Promise<Reservation> {
-    const { reservation, eventId } = await this.reservationsRepository.create(dto.userId, dto.seatId);
-    await this.redis.del(`seats:event:${eventId}`);
+    let succeeded = false;
+    const key = REDIS_KEYS.seatLock(dto.seatId);
+    const acquire = await this.redisLockService.acquire(key, String(dto.userId), REDIS_TTL.seatLock);
+    if (!acquire) {
+      throw new ConflictException('Seat is already being reserved');
+    }
 
-    return reservation;
+    try {
+      const { reservation, eventId } = await this.reservationsRepository.create(dto.userId, dto.seatId);
+      await this.redis.del(REDIS_KEYS.seatsAvailableByEvent(eventId));
+      succeeded = !!reservation;
+
+      return reservation;
+    } finally {
+      if (!succeeded) {
+        try {
+          await this.redisLockService.release(key, String(dto.userId));
+        } catch (err) {
+          this.logger.error(`Failed to release lock ${key}`, err);
+        }
+      }
+    }
   }
 
   async findById(id: number): Promise<Reservation> {

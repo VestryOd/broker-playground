@@ -1,11 +1,8 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { SeatsRepository } from "./seats.repository";
 import { Seat } from "../common/types/seat.types";
-import { REDIS_CLIENT } from "../redis/redis.constants";
+import { REDIS_CLIENT, REDIS_KEYS, REDIS_TTL } from "../redis/redis.constants";
 import Redis from "ioredis";
-
-const SEATS_BY_ID_KEY = 'seats:event';
-const SEATS_BY_ID_TTL = 30;
 
 @Injectable()
 export class SeatsService {
@@ -14,18 +11,25 @@ export class SeatsService {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
-  findAllAvailable(event_id: number): Promise<Seat[]> {
-    return this.seatsRepository.findAvailableByEventId((event_id));
+  async findAllAvailable(eventId: number): Promise<Seat[]> {
+    const key = REDIS_KEYS.seatsAvailableByEvent(eventId);
+    const cached = await this.redis.get(key);
+    if (cached) {
+      return JSON.parse(cached) as Seat[];
+    }
+    const available = await this.seatsRepository.findAvailableByEventId(eventId);
+    await this.redis.setex(key, REDIS_TTL.seatsAvailable, JSON.stringify(available));
+    return available;
   }
 
   async findByEventId(eventId: number): Promise<Seat[]> {
-    const key = `${SEATS_BY_ID_KEY}:${eventId}`;
+    const key = REDIS_KEYS.seatsByEvent(eventId);
     const cached = await this.redis.get(key);
     if (cached) {
       return JSON.parse(cached) as Seat[];
     }
     const seats = await this.seatsRepository.findByEventId(eventId);
-    await this.redis.setex(key, SEATS_BY_ID_TTL, JSON.stringify(seats));
+    await this.redis.setex(key, REDIS_TTL.seatsByEvent, JSON.stringify(seats));
     return seats;
   }
 }

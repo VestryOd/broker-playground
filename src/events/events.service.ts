@@ -1,11 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import Redis from 'ioredis';
-import { REDIS_CLIENT } from '../redis/redis.constants';
+import { REDIS_CLIENT, REDIS_KEYS, REDIS_TTL } from '../redis/redis.constants';
 import { EventsRepository } from './events.repository';
 import { Event } from '../common/types/event.types';
-
-const EVENTS_ALL_KEY = 'events:all';
-const EVENTS_ALL_TTL = 60;
 
 @Injectable()
 export class EventsService {
@@ -15,13 +12,13 @@ export class EventsService {
   ) {}
 
   async findAll(): Promise<Event[]> {
-    const cached = await this.redis.get(EVENTS_ALL_KEY);
+    const cached = await this.redis.get(REDIS_KEYS.eventsAll);
     if (cached) {
       return JSON.parse(cached) as Event[];
     }
 
     const events = await this.eventsRepository.findAll();
-    await this.redis.setex(EVENTS_ALL_KEY, EVENTS_ALL_TTL, JSON.stringify(events));
+    await this.redis.setex(REDIS_KEYS.eventsAll, REDIS_TTL.eventsAll, JSON.stringify(events));
     return events;
   }
 
