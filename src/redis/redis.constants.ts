@@ -1,4 +1,9 @@
 export const REDIS_CLIENT = 'REDIS_CLIENT';
+export const REDIS_SUBSCRIBER = 'REDIS_SUBSCRIBER';
+
+export const REDIS_CHANNELS = {
+  reservationCreated: 'reservation.created',
+};
 
 export const REDIS_KEYS = {
   eventsAll: 'events:all',

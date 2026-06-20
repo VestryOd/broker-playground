@@ -10,6 +10,11 @@ import { ReservationsRateLimitGuard } from "./reservations.rate-limit.guard";
 @Module({
   imports: [DatabaseModule, RedisModule],
   controllers: [ReservationsController],
-  providers: [ReservationsService, ReservationsRepository, ReservationsWorker, ReservationsRateLimitGuard],
+  providers: [
+    ReservationsService,
+    ReservationsRepository,
+    ReservationsWorker,
+    ReservationsRateLimitGuard
+  ],
 })
 export class ReservationsModule {}
