@@ -27,6 +27,12 @@ export class ReservationsRepository {
         VALUES ($1, $2, 'pending', NOW() + INTERVAL '10 minutes') RETURNING *`,
         [userId, seatId]
       );
+      const { id } = reservationRows[0];
+      await client.query(
+        `INSERT INTO outbox (event_type, payload) 
+        VALUES ('reservation.created', $1)`,
+        [{ userId, reservationId: id }]
+      )
       await client.query('COMMIT');
 
       return { reservation: reservationRows[0], eventId: seatRow[0].event_id };

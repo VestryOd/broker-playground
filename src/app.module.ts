@@ -14,6 +14,7 @@ import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
 import { SeatsModule } from "./seats/seats.module";
 import { CorrelationMiddleware } from "./common/correlation/correlation.middleware";
+import { OutboxModule } from "./outbox/outbox.module";
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CorrelationMiddleware } from "./common/correlation/correlation.middlewa
     EventsModule,
     SeatsModule,
     ReservationsModule,
+    OutboxModule,
   ],
   controllers: [AppController],
   providers: [AppService],

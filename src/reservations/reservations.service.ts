@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException, Inject, ConflictException, Logger } from '@nestjs/common';
 import { ReservationsRepository } from './reservations.repository';
 import { CreateReservationDto, Reservation } from '../common/types/reservation.types';
-import {REDIS_CHANNELS, REDIS_CLIENT, REDIS_KEYS, REDIS_TTL} from "../redis/redis.constants";
+import { REDIS_CLIENT, REDIS_KEYS, REDIS_TTL } from "../redis/redis.constants";
 import Redis from "ioredis";
 import { RedisLockService } from "../redis/redis.lock.service";
-import { RedisPubSubService } from "../redis/redis.pubsub.service";
 
 @Injectable()
 export class ReservationsService {
@@ -13,7 +12,6 @@ export class ReservationsService {
   constructor(
     private readonly reservationsRepository: ReservationsRepository,
     private readonly redisLockService: RedisLockService,
-    private readonly pubSubService: RedisPubSubService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
@@ -29,10 +27,6 @@ export class ReservationsService {
       const { reservation, eventId } = await this.reservationsRepository.create(dto.userId, dto.seatId);
       await this.redis.del(REDIS_KEYS.seatsAvailableByEvent(eventId));
       succeeded = !!reservation;
-      await this.pubSubService.publish(REDIS_CHANNELS.reservationCreated, {
-        id: reservation.id,
-        userId: dto.userId,
-      });
 
       return reservation;
     } finally {
